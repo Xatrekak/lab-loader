@@ -2,8 +2,9 @@ import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QFileDialog
 from PyQt5.QtWidgets import QSizePolicy
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import os
+import platform
 import json
 import requests
 import subprocess
@@ -91,8 +92,12 @@ class Ui_MainWindow(object):
             self.comboBox_projectSelection.addItem(i['name'])
 
     def get_IP(self):
-        file = open(str(Path.home()) + os.path.join('/.config', 'GNS3', 'gns3_server.conf'),
-                    'r').readlines()
+        if os.name == 'nt':
+            file = open(str(Path.home()) + os.path.join(r'\AppData', 'Roaming', 'GNS3', 'gns3_server.ini'),
+                        'r').readlines()
+        else:
+            file = open(str(Path.home()) + os.path.join('/.config', 'GNS3', 'gns3_server.conf'),
+                        'r').readlines()
         reg = re.compile(
             r"""(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}
             (?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)""", re.X)
@@ -123,21 +128,34 @@ class Ui_MainWindow(object):
         dirpath = os.path.join('files', 'INE.VIRL.initial.configs', 'advanced.technology.labs', str(self.comboBox_LabSelection.currentText()))
         progress = 0
         self.progressBar.setProperty("value", progress)
+        if os.name == 'nt':
+            is32bit = (platform.architecture()[0] == '32bit')
+            system32 = os.path.join(os.environ['SystemRoot'], 'SysNative' if is32bit else 'System32')
+            bash = os.path.join(system32, 'bash.exe')
         for filename in os.listdir(dirpath):
-            string1 = 'md5sum ' + dirpath + '/' + filename + ' | cut -d \' \' -f 1 > files/ios_config_checksum'
-            string2 = 'cp ' + dirpath + '/' + filename + ' files/ios_config.txt'
+            string1 = 'md5sum ' + str(PurePosixPath(Path(dirpath))) + '/' + filename + ' | cut -d \' \' -f 1 > files/ios_config_checksum'
+            string2 = 'cp ' + str(PurePosixPath(Path(dirpath))) + '/' + filename + ' files/ios_config.txt'
             string3 = 'cp files/IOSv_startup_config_template.img files/IOSv_startup_config_' + filename[:-4] + '.img'
             string4 = 'mcopy -i files/IOSv_startup_config_' + filename[:-4] + '.img@@63S files/ios_config.txt ::'
             string5 = 'mcopy -i files/IOSv_startup_config_' + filename[:-4] + '.img@@63S files/ios_config_checksum ::'
             string6 = 'md5sum files/IOSv_startup_config_' + filename[:-4] + '.img | cut -d \' \' -f 1 > files/IOSv_startup_config_' + filename[:-4] + '.img.md5sum'
             string7 = 'md5sum files/IOSv_startup_config_' + filename[:-4] + '.img | cut -d \' \' -f 1'
-            subprocess.call(string1, shell=True)
-            subprocess.call(string2, shell=True)
-            subprocess.call(string3, shell=True)
-            subprocess.call(string4, shell=True)
-            subprocess.call(string5, shell=True)
-            subprocess.call(string6, shell=True)
-            string7 = subprocess.check_output(string7, shell=True)
+            if os.name == 'nt':
+                subprocess.call(bash + ' -c ' + '\"' + string1 + '\"')
+                subprocess.call(bash + ' -c ' + '\"' + string2 + '\"')
+                subprocess.call(bash + ' -c ' + '\"' + string3 + '\"')
+                subprocess.call(bash + ' -c ' + '\"' + string4 + '\"')
+                subprocess.call(bash + ' -c ' + '\"' + string5 + '\"')
+                subprocess.call(bash + ' -c ' + '\"' + string6 + '\"')
+                string7 = subprocess.check_output(bash + ' -c ' + '\"' + string7 + '\"')
+            else:
+                subprocess.call(string1, shell=True)
+                subprocess.call(string2, shell=True)
+                subprocess.call(string3, shell=True)
+                subprocess.call(string4, shell=True)
+                subprocess.call(string5, shell=True)
+                subprocess.call(string6, shell=True)
+                string7 = subprocess.check_output(string7, shell=True)
             string7 = string7[:-1].decode("utf -8")
             for p in projectJson["topology"]["nodes"]:
                 if p["name"] == "R-" + filename[1:-4]:
