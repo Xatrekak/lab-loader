@@ -1,16 +1,14 @@
 #! ./venv/Scripts/pythonw
 import sys
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QFileDialog
-from PyQt5.QtWidgets import QSizePolicy
-from pathlib import Path, PurePosixPath
 import os
 import platform
 import json
-import requests
 import subprocess
 import re
-import warnings
+from pathlib import Path, PurePosixPath
+from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtWidgets import QSizePolicy
+import requests
 import pysftp
 
 
