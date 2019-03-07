@@ -7,7 +7,7 @@ import subprocess
 import re
 from pathlib import Path, PurePosixPath
 from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtWidgets import QSizePolicy
+from PyQt5.QtWidgets import *
 import requests
 import pysftp
 
@@ -15,6 +15,7 @@ import pysftp
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
+        app.setStyle(QStyleFactory.create('WindowsVista'))
         MainWindow.setEnabled(True)
         MainWindow.resize(657, 405)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
