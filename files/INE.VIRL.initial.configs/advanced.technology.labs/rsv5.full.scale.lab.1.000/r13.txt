@@ -7,8 +7,8 @@ configure terminal
 version 15.4
 service timestamps debug datetime msec
 service timestamps log datetime msec
-no platform punt-keepalive disable-kernel-core
-platform console serial
+!
+!
 !
 hostname R13
 !
@@ -42,7 +42,7 @@ ipv6 unicast-routing
 !
 !
 !
-subscriber templating
+!
 !
 multilink bundle-name authenticated
 !
@@ -75,14 +75,13 @@ crypto pki certificate chain TP-self-signed-2829076952
   B5D0A75A 19B98BCE D84547E2 D5C18867 4E3227FE 8CF5F60A 761CB54D EFBF5E79 
   2F623B77 2D7CD2BE 549FB7B6 158BB7
   	quit
-license udi pid CSR1000V sn 97B6YBUT01O
-license boot level ax
-spanning-tree extend system-id
+!
+!
+!
 !
 username cisco privilege 15 secret 5 $1$xFIu$OGtcO1NjQrHx.wFJ159pX0
 !
-redundancy
- mode none
+!
 !
 !
 !
@@ -111,28 +110,26 @@ interface Loopback0
  ip address 192.122.3.13 255.255.255.255
  ipv6 address ::192:122:3:13/128
 !
-interface GigabitEthernet1
+interface GigabitEthernet0/1
  no shutdown
- negotiation auto
+ !
 !
-interface GigabitEthernet1.113
+interface GigabitEthernet0/1.113
  encapsulation dot1Q 113
  ip address 172.19.113.13 255.255.255.128
  ipv6 address 2001:172:19:113::13/64
 !
-interface GigabitEthernet1.134
+interface GigabitEthernet0/1.134
  encapsulation dot1Q 134
  ip address 172.19.134.13 255.255.255.128
  ipv6 address 2001:172:19:134::13/64
 !
-interface GigabitEthernet2
+interface GigabitEthernet0/2
  ip address 192.168.1.13 255.255.255.0
- negotiation auto
+ !
 !
 !
-virtual-service csr_mgmt
- ip shared host-interface GigabitEthernet2
- activate
+!
 !
 ip forward-protocol nd
 !

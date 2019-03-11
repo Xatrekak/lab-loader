@@ -7,8 +7,8 @@ configure terminal
 version 15.4
 service timestamps debug datetime msec
 service timestamps log datetime msec
-no platform punt-keepalive disable-kernel-core
-platform console serial
+!
+!
 !
 hostname R6
 !
@@ -42,20 +42,19 @@ ipv6 unicast-routing
 !
 !
 !
-subscriber templating
+!
 !
 multilink bundle-name authenticated
 !
 !
 !
-license udi pid CSR1000V sn 95OSJ0DCRXR
-license boot level ax
-spanning-tree extend system-id
+!
+!
+!
 !
 username cisco privilege 15 secret 5 $1$eF1d$RtoVvxulLL30InAq01r0F1
 !
-redundancy
- mode none
+!
 !
 !
 !
@@ -84,42 +83,42 @@ interface Loopback0
  ip address 192.122.3.6 255.255.255.255
  ipv6 address ::192:122:3:6/128
 !
-interface GigabitEthernet1
+interface GigabitEthernet0/1
  no shutdown
- negotiation auto
+ !
 !
-interface GigabitEthernet1.36
+interface GigabitEthernet0/1.36
  encapsulation dot1Q 36
  ip address 10.0.36.2 255.255.255.252
  ip pim sparse-mode
  ipv6 address 2001:10:0:36::2/126
 !
-interface GigabitEthernet1.46
+interface GigabitEthernet0/1.46
  encapsulation dot1Q 46
  ip address 10.0.46.2 255.255.255.252
  ip pim sparse-mode
  ipv6 address 2001:10:0:46::2/126
 !
-interface GigabitEthernet1.56
+interface GigabitEthernet0/1.56
  encapsulation dot1Q 56
  ip address 10.0.56.2 255.255.255.252
  ip pim sparse-mode
  ipv6 address 2001:10:0:56::2/126
 !
-interface GigabitEthernet1.60
+interface GigabitEthernet0/1.60
  encapsulation dot1Q 60
  ip address 202.4.60.0 255.255.255.254
  ipv6 address 2001:202:4:60::/127
 !
-interface GigabitEthernet2
+interface GigabitEthernet0/2
  ip address 192.168.1.6 255.255.255.0
- negotiation auto
+ !
 !
 router bgp 65006
  bgp log-neighbor-changes
  neighbor 202.4.60.1 remote-as 65123
 !
-virtual-service csr_mgmt
+!
 !
 ip forward-protocol nd
 !

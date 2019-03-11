@@ -7,8 +7,8 @@ configure terminal
 version 15.4
 service timestamps debug datetime msec
 service timestamps log datetime msec
-no platform punt-keepalive disable-kernel-core
-platform console serial
+!
+!
 !
 hostname R1
 !
@@ -42,7 +42,7 @@ ipv6 unicast-routing
 !
 !
 !
-subscriber templating
+!
 !
 multilink bundle-name authenticated
 !
@@ -75,14 +75,13 @@ crypto pki certificate chain TP-self-signed-4098623145
   B09A4849 AEB5E1C1 785A227D D4D94A92 632630C0 7B498EB3 69625852 C758505B 
   A312137D 3A888567 02AD9DCD E4563F
   	quit
-license udi pid CSR1000V sn 92HVO0PSL3U
-license boot level ax
-spanning-tree extend system-id
+!
+!
+!
 !
 username cisco privilege 15 secret 5 $1$6cdl$cmjLSX79LVHEnbYagSKEm/
 !
-redundancy
- mode none
+!
 !
 !
 !
@@ -111,54 +110,52 @@ interface Loopback0
  ip address 192.122.3.1 255.255.255.255
  ipv6 address ::192:122:3:1/128
 !
-interface GigabitEthernet1
+interface GigabitEthernet0/1
  no shutdown
- negotiation auto
+ !
 !
-interface GigabitEthernet1.12
+interface GigabitEthernet0/1.12
  encapsulation dot1Q 12
  ip address 10.0.12.1 255.255.255.252
  ipv6 address 2001:10:0:12::1/126
 !
-interface GigabitEthernet1.13
+interface GigabitEthernet0/1.13
  encapsulation dot1Q 13
  ip address 10.0.13.1 255.255.255.252
  ipv6 address 2001:10:0:13::1/126
 !
-interface GigabitEthernet1.14
+interface GigabitEthernet0/1.14
  encapsulation dot1Q 14
  ip address 10.0.14.1 255.255.255.252
  ipv6 address 2001:10:0:14::1/126
 !
-interface GigabitEthernet1.17
+interface GigabitEthernet0/1.17
  encapsulation dot1Q 17
  ip address 136.5.17.1 255.255.255.0
  ipv6 address 2001:136:5:17::1/64
 !
-interface GigabitEthernet1.18
+interface GigabitEthernet0/1.18
  encapsulation dot1Q 18
  ip address 136.5.18.1 255.255.255.0
  ipv6 address 2001:136:5:18::1/64
 !
-interface GigabitEthernet1.116
+interface GigabitEthernet0/1.116
  encapsulation dot1Q 116
  ip address 89.211.116.1 255.255.255.128
  ipv6 address 2001:89:211:116::1/125
 !
-interface GigabitEthernet1.117
+interface GigabitEthernet0/1.117
  encapsulation dot1Q 117
  ip address 89.211.117.1 255.255.255.128
  ipv6 address 2001:89:211:117::1/125
 !
-interface GigabitEthernet2
+interface GigabitEthernet0/2
  description MGMT INTERFACE - DO NOT CHANGE
  ip address 192.168.1.1 255.255.255.0
- negotiation auto
+ !
 !
 !
-virtual-service csr_mgmt
- ip shared host-interface GigabitEthernet2
- activate
+!
 !
 ip forward-protocol nd
 !
