@@ -7,8 +7,8 @@ configure terminal
 version 15.4
 service timestamps debug datetime msec
 service timestamps log datetime msec
-!
-!
+no platform punt-keepalive disable-kernel-core
+platform console serial
 !
 hostname R10
 !
@@ -42,19 +42,20 @@ ipv6 unicast-routing
 !
 !
 !
-!
+subscriber templating
 !
 multilink bundle-name authenticated
 !
 !
 !
-!
-!
-!
+license udi pid CSR1000V sn 9MWA7QEAAU8
+license boot level ax
+spanning-tree extend system-id
 !
 username cisco privilege 15 secret 5 $1$VjTE$/YiAPH4DkXsExv6rqM5OI0
 !
-!
+redundancy
+ mode none
 !
 !
 !
@@ -83,26 +84,26 @@ interface Loopback0
  ip address 192.122.3.10 255.255.255.255
  ipv6 address ::192:122:3:10/128
 !
-interface GigabitEthernet0/1
+interface GigabitEthernet1
  no shutdown
- !
+ negotiation auto
 !
-interface GigabitEthernet0/1.102
+interface GigabitEthernet1.102
  encapsulation dot1Q 102
  ip address 172.19.102.10 255.255.255.128
  ipv6 address 2001:172:19:102::10/64
 !
-interface GigabitEthernet0/1.210
+interface GigabitEthernet1.210
  encapsulation dot1Q 210
  ip address 202.4.210.10 255.255.255.0
  ipv6 address 2001:202:4:210::10/64
 !
-interface GigabitEthernet0/2
+interface GigabitEthernet2
  ip address 192.168.1.10 255.255.255.0
- !
+ negotiation auto
 !
 !
-!
+virtual-service csr_mgmt
 !
 ip forward-protocol nd
 !

@@ -7,8 +7,8 @@ configure terminal
 version 15.4
 service timestamps debug datetime msec
 service timestamps log datetime msec
-!
-!
+no platform punt-keepalive disable-kernel-core
+platform console serial
 !
 hostname R15
 !
@@ -75,7 +75,7 @@ ipv6 unicast-routing
 !
 !
 !
-!
+subscriber templating
 !
 multilink bundle-name authenticated
 !
@@ -108,13 +108,14 @@ crypto pki certificate chain TP-self-signed-1248692706
   8E77DD00 1E503210 D299BD06 BE62F420 2ADAF31F CD28ECD2 319DEF42 546A3CAE 
   888F026C 6B7D1094 5D12F164 16F479
   	quit
-!
-!
-!
+license udi pid CSR1000V sn 9FSD6IRBA2E
+license boot level ax
+spanning-tree extend system-id
 !
 username cisco privilege 15 secret 5 $1$IKXX$nFdbE6Pr.gJqZI5FbiaNA.
 !
-!
+redundancy
+ mode none
 !
 !
 !
@@ -169,48 +170,48 @@ interface Loopback180
  no ip address
  ipv6 address 2004:180::2/32
 !
-interface GigabitEthernet0/1
+interface GigabitEthernet1
  no shutdown
- !
+ negotiation auto
 !
-interface GigabitEthernet0/1.60
+interface GigabitEthernet1.60
  encapsulation dot1Q 60
  vrf forwarding internet
  ip address 202.4.60.1 255.255.255.254
  ipv6 address 2001:202:4:60::1/127
 !
-interface GigabitEthernet0/1.134
+interface GigabitEthernet1.134
  encapsulation dot1Q 134
  ip address 172.19.134.15 255.255.255.128
  ipv6 address 2001:172:19:134::15/64
 !
-interface GigabitEthernet0/1.160
+interface GigabitEthernet1.160
  encapsulation dot1Q 160
  vrf forwarding server3
  ip address 172.23.160.100 255.255.255.0
  ipv6 address 2001:172:23:160::100/64
 !
-interface GigabitEthernet0/1.170
+interface GigabitEthernet1.170
  encapsulation dot1Q 170
  vrf forwarding server2
  ip address 172.25.170.100 255.255.255.0
  ipv6 address 2001:172:25:170::100/64
 !
-interface GigabitEthernet0/1.180
+interface GigabitEthernet1.180
  encapsulation dot1Q 180
  vrf forwarding internet
  ip address 202.4.180.1 255.255.255.254
  ipv6 address 2001:202:4:180::1/127
 !
-interface GigabitEthernet0/1.192
+interface GigabitEthernet1.192
  encapsulation dot1Q 192
  vrf forwarding server1
  ip address 172.27.192.100 255.255.255.0
  ipv6 address 2001:172:27:192::100/64
 !
-interface GigabitEthernet0/2
+interface GigabitEthernet2
  ip address 192.168.1.15 255.255.255.0
- !
+ negotiation auto
 !
 router eigrp SERVERS
  !
@@ -246,13 +247,15 @@ router bgp 65123
  exit-address-family
 !
 !
-!
+virtual-service csr_mgmt
+ ip shared host-interface GigabitEthernet2
+ activate
 !
 ip forward-protocol nd
 !
 no ip http server
 ip http secure-server
-ip route vrf server1 0.0.0.0 0.0.0.0 GigabitEthernet0/1.192 172.27.192.254
+ip route vrf server1 0.0.0.0 0.0.0.0 GigabitEthernet1.192 172.27.192.254
 !
 !
 route-map IPv6_INTERNET_ROUTES permit 10

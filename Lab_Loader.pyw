@@ -62,6 +62,14 @@ class Ui_MainWindow(object):
         self.comboBox_LabSelection.setObjectName("comboBox_LabSelection")
         self.comboBox_LabSelection.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
         self.comboBox_LabSelection.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
+
+        self.comboBox_ModeSelection = QtWidgets.QComboBox(self.centralwidget)
+        self.comboBox_ModeSelection.setGeometry(QtCore.QRect(250, 230, 171, 31))
+        self.comboBox_ModeSelection.setObjectName("comboBox_ModeSelection")
+        self.comboBox_ModeSelection.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+        self.comboBox_ModeSelection.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
+        self.comboBox_ModeSelection.addItem('vIOS Mode')
+        self.comboBox_ModeSelection.addItem('CSR1000v Mode')
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.GetDir = []
@@ -114,6 +122,13 @@ class Ui_MainWindow(object):
                 self.comboBox_LabSelection.addItem(dirname)
 
     def loadLab(self):
+        if str(self.comboBox_ModeSelection.currentText()) == 'vIOS Mode':
+            self.IOSv_loadLab()
+        if str(self.comboBox_ModeSelection.currentText()) == 'CSR1000v Mode':
+            self.CSR1000v_loadLab()
+
+
+    def IOSv_loadLab(self):
         projectSelection = str(self.comboBox_projectSelection.currentText())
         cnopts = pysftp.CnOpts()
         cnopts.hostkeys = None
@@ -177,6 +192,66 @@ class Ui_MainWindow(object):
             os.remove("files/ios_config.txt")
             os.remove('files/IOSv_startup_config_' + filename[:-4] + '.img.md5sum')
             os.remove('files/IOSv_startup_config_' + filename[:-4] + '.img')
+            progress = progress + 100/len(os.listdir(dirpath))
+            self.progressBar.setProperty("value", progress)
+        with open('files/'+projectSelection+'.gns3', 'w') as outfile:
+            json.dump(projectJson, outfile, sort_keys=True, indent=4)
+        with pysftp.Connection(self.GNS3_IP, username='gns3', password='gns3', cnopts=cnopts) as sftp:
+            with sftp.cd('/opt/gns3/projects/'+project_id):
+                sftp.put('files/'+projectSelection+'.gns3')
+            sftp.close()
+        os.remove('files/'+projectSelection+'.gns3')
+        self.progressBar.setProperty("value", 100)
+
+
+    def CSR1000v_loadLab(self):
+        projectSelection = str(self.comboBox_projectSelection.currentText())
+        cnopts = pysftp.CnOpts()
+        cnopts.hostkeys = None
+        for i in self.projectJson_list:
+            if i['name'] == projectSelection:
+                project_id = i['project_id']
+                project_filename = i['filename']
+
+        GetProjectfile = requests.get(
+            'http://' + self.GNS3_IP + ':3080/v2/projects/' + project_id + '/files/' + project_filename)
+        projectJson = GetProjectfile.json()
+        dirpath = os.path.join('files', 'INE.VIRL.initial.configs', 'advanced.technology.labs', str(self.comboBox_LabSelection.currentText()))
+        progress = 0
+        self.progressBar.setProperty("value", progress)
+        if os.name == 'nt':
+            is32bit = (platform.architecture()[0] == '32bit')
+            system32 = os.path.join(os.environ['SystemRoot'], 'SysNative' if is32bit else 'System32')
+            bash = os.path.join(system32, 'bash.exe')
+        for filename in os.listdir(dirpath):
+            string1 = 'cp ' + str(PurePosixPath(Path(dirpath))) + '/' + filename + ' files/iosxe_config.txt'
+            string2 = 'mkisofs -l -o files/csr_config_' + filename[:-4] + '.iso files/iosxe_config.txt'
+            string3 = 'md5sum files/csr_config_' + filename[:-4] + '.iso | cut -d \' \' -f 1'
+            if os.name == 'nt':
+                subprocess.call(bash + ' -c ' + '\"' + string1 + '\"')
+                subprocess.call(bash + ' -c ' + '\"' + string2 + '\"')
+                string3 = subprocess.check_output(bash + ' -c ' + '\"' + string3 + '\"')
+            else:
+                subprocess.call(string1, shell=True)
+                subprocess.call(string2, shell=True)
+                string3 = subprocess.check_output(string3, shell=True)
+            for p in projectJson["topology"]["nodes"]:
+                if p["name"] == "R-" + filename[1:-4]:
+                    p["properties"]["cdrom_image_md5sum"] = string3
+                    node_id = p["node_id"]
+            with pysftp.Connection(self.GNS3_IP, username='gns3', password='gns3', cnopts=cnopts) as sftp:
+                with sftp.cd('/opt/gns3/images/QEMU/'):
+                    sftp.put('files/csr_config_' + filename[:-4] + '.iso')
+                sftp.close()
+            with pysftp.Connection(self.GNS3_IP, username='gns3', password='gns3', cnopts=cnopts) as sftp:
+                for remotedir in sftp.listdir('/opt/gns3/projects/'+project_id+'/project-files/qemu/'):
+                    if remotedir == node_id:
+                        with sftp.cd('/opt/gns3/projects/'+project_id+'/project-files/qemu/'+node_id):
+                            for remotefile in sftp.listdir():
+                                sftp.remove(remotefile)
+                sftp.close()
+            os.remove("files/iosxe_config.txt")
+            os.remove('files/csr_config_' + filename[:-4] + '.iso')
             progress = progress + 100/len(os.listdir(dirpath))
             self.progressBar.setProperty("value", progress)
         with open('files/'+projectSelection+'.gns3', 'w') as outfile:
