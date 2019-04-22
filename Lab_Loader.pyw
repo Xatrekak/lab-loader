@@ -68,8 +68,11 @@ class Ui_MainWindow(object):
         self.comboBox_ModeSelection.setObjectName("comboBox_ModeSelection")
         self.comboBox_ModeSelection.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
         self.comboBox_ModeSelection.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
-        self.comboBox_ModeSelection.addItem('vIOS Mode')
         self.comboBox_ModeSelection.addItem('CSR1000v Mode')
+        self.comboBox_ModeSelection.addItem('vIOS Mode')
+
+        self.error_dialog = QtWidgets.QErrorMessage()
+
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.GetDir = []
@@ -123,9 +126,33 @@ class Ui_MainWindow(object):
 
     def loadLab(self):
         if str(self.comboBox_ModeSelection.currentText()) == 'vIOS Mode':
-            self.IOSv_loadLab()
+            check_bin = 'whereis mcopy'
+            if os.name == 'nt':
+                is32bit = (platform.architecture()[0] == '32bit')
+                system32 = os.path.join(os.environ['SystemRoot'], 'SysNative' if is32bit else 'System32')
+                bash = os.path.join(system32, 'bash.exe')
+                check_bin = subprocess.check_output(bash + ' -c ' + '\"' + check_bin + '\"')
+                if check_bin != b"mcopy:\n":
+                    self.IOSv_loadLab()
+            else:
+                check_bin = subprocess.check_output(check_bin, shell=True)
+                if check_bin != b"mcopy:\n":
+                    self.IOSv_loadLab()
+            self.error_dialog.showMessage('Error:\r\nmcopy is most likely not installed.\r\nTry installing mtools.')
         if str(self.comboBox_ModeSelection.currentText()) == 'CSR1000v Mode':
-            self.CSR1000v_loadLab()
+            check_bin = 'whereis mkisofs'
+            if os.name == 'nt':
+                is32bit = (platform.architecture()[0] == '32bit')
+                system32 = os.path.join(os.environ['SystemRoot'], 'SysNative' if is32bit else 'System32')
+                bash = os.path.join(system32, 'bash.exe')
+                check_bin = subprocess.check_output(bash + ' -c ' + '\"' + check_bin + '\"')
+                if check_bin != b"mkisofs:\n":
+                    self.CSR1000v_loadLab()
+            else:
+                check_bin = subprocess.check_output(check_bin, shell=True)
+                if check_bin != b"mkisofs:\n":
+                    self.CSR1000v_loadLab()
+            self.error_dialog.showMessage('Error:\r\nmkisofs is most likely not installed.\r\nTry installing cdrtools or cdrkit.')
 
 
     def IOSv_loadLab(self):
@@ -173,7 +200,7 @@ class Ui_MainWindow(object):
                 string7 = subprocess.check_output(string7, shell=True)
             string7 = string7[:-1].decode("utf -8")
             for p in projectJson["topology"]["nodes"]:
-                if p["name"] == "R-" + filename[1:-4]:
+                if p["name"] == "R" + filename[1:-4]:
                     p["properties"]["hdc_disk_image_md5sum"] = string7
                     node_id = p["node_id"]
             with pysftp.Connection(self.GNS3_IP, username='gns3', password='gns3', cnopts=cnopts) as sftp:
@@ -236,7 +263,7 @@ class Ui_MainWindow(object):
                 subprocess.call(string2, shell=True)
                 string3 = subprocess.check_output(string3, shell=True)
             for p in projectJson["topology"]["nodes"]:
-                if p["name"] == "R-" + filename[1:-4]:
+                if p["name"] == "R" + filename[1:-4]:
                     p["properties"]["cdrom_image_md5sum"] = string3
                     node_id = p["node_id"]
             with pysftp.Connection(self.GNS3_IP, username='gns3', password='gns3', cnopts=cnopts) as sftp:
