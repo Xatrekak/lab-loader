@@ -7,7 +7,6 @@ import subprocess
 import re
 from pathlib import Path, PurePosixPath
 from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtWidgets import *
 import requests
 import pysftp
 
@@ -15,7 +14,7 @@ import pysftp
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        app.setStyle(QStyleFactory.create('WindowsVista'))
+        app.setStyle(QtWidgets.QStyleFactory.create('WindowsVista'))
         MainWindow.setEnabled(True)
         MainWindow.resize(657, 405)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
@@ -55,18 +54,18 @@ class Ui_MainWindow(object):
         self.comboBox_projectSelection = QtWidgets.QComboBox(self.centralwidget)
         self.comboBox_projectSelection.setGeometry(QtCore.QRect(250, 80, 171, 31))
         self.comboBox_projectSelection.setObjectName("comboBox_projectSelection")
-        self.comboBox_projectSelection.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+        self.comboBox_projectSelection.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
         self.comboBox_projectSelection.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
         self.comboBox_LabSelection = QtWidgets.QComboBox(self.centralwidget)
         self.comboBox_LabSelection.setGeometry(QtCore.QRect(250, 155, 171, 31))
         self.comboBox_LabSelection.setObjectName("comboBox_LabSelection")
-        self.comboBox_LabSelection.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+        self.comboBox_LabSelection.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
         self.comboBox_LabSelection.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
 
         self.comboBox_ModeSelection = QtWidgets.QComboBox(self.centralwidget)
         self.comboBox_ModeSelection.setGeometry(QtCore.QRect(250, 230, 171, 31))
         self.comboBox_ModeSelection.setObjectName("comboBox_ModeSelection")
-        self.comboBox_ModeSelection.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+        self.comboBox_ModeSelection.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
         self.comboBox_ModeSelection.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
         self.comboBox_ModeSelection.addItem('CSR1000v Mode')
         self.comboBox_ModeSelection.addItem('vIOS Mode')
@@ -119,7 +118,7 @@ class Ui_MainWindow(object):
 
     def selectLab(self):
         self.comboBox_LabSelection.clear()
-        for root, dirs, files in os.walk(os.path.join('files', 'INE.VIRL.initial.configs', 'advanced.technology.labs')):
+        for _, dirs, _ in os.walk(os.path.join('files', 'INE.VIRL.initial.configs', 'advanced.technology.labs')):
             dirs.sort()
             for dirname in dirs:
                 self.comboBox_LabSelection.addItem(dirname)
