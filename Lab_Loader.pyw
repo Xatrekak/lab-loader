@@ -28,34 +28,41 @@ class Ui_MainWindow(object):
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.centralwidget.sizePolicy().hasHeightForWidth())
+        
         self.centralwidget.setSizePolicy(sizePolicy)
         self.centralwidget.setMinimumSize(QtCore.QSize(657, 405))
         self.centralwidget.setMaximumSize(QtCore.QSize(657, 405))
         self.centralwidget.setObjectName("centralwidget")
+
         self.pushButton_1_selectProject = QtWidgets.QPushButton(self.centralwidget)
         self.pushButton_1_selectProject.setGeometry(QtCore.QRect(55, 75, 120, 45))
         self.pushButton_1_selectProject.setMinimumSize(QtCore.QSize(120, 45))
         self.pushButton_1_selectProject.setMaximumSize(QtCore.QSize(120, 16777215))
         self.pushButton_1_selectProject.setObjectName("pushButton_1_selectProject")
+
         self.pushButton_2_selectLab = QtWidgets.QPushButton(self.centralwidget)
         self.pushButton_2_selectLab.setGeometry(QtCore.QRect(55, 152, 120, 45))
         self.pushButton_2_selectLab.setMinimumSize(QtCore.QSize(120, 45))
         self.pushButton_2_selectLab.setMaximumSize(QtCore.QSize(120, 0))
         self.pushButton_2_selectLab.setObjectName("pushButton_2_selectLab")
+
         self.pushButton_3_loadLab = QtWidgets.QPushButton(self.centralwidget)
         self.pushButton_3_loadLab.setGeometry(QtCore.QRect(55, 229, 120, 45))
         self.pushButton_3_loadLab.setMinimumSize(QtCore.QSize(120, 45))
         self.pushButton_3_loadLab.setMaximumSize(QtCore.QSize(120, 0))
         self.pushButton_3_loadLab.setObjectName("pushButton_3_loadLab")
+
         self.progressBar = QtWidgets.QProgressBar(self.centralwidget)
         self.progressBar.setGeometry(QtCore.QRect(10, 330, 631, 31))
         self.progressBar.setProperty("value", 0)
         self.progressBar.setObjectName("progressBar")
+
         self.comboBox_projectSelection = QtWidgets.QComboBox(self.centralwidget)
         self.comboBox_projectSelection.setGeometry(QtCore.QRect(250, 80, 171, 31))
         self.comboBox_projectSelection.setObjectName("comboBox_projectSelection")
         self.comboBox_projectSelection.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
         self.comboBox_projectSelection.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
+
         self.comboBox_LabSelection = QtWidgets.QComboBox(self.centralwidget)
         self.comboBox_LabSelection.setGeometry(QtCore.QRect(250, 155, 171, 31))
         self.comboBox_LabSelection.setObjectName("comboBox_LabSelection")
