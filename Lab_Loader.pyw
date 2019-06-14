@@ -104,8 +104,7 @@ class Ui_MainWindow(object):
         self.GNS3_IP = self.get_IP()
         GetProjectList = requests.get(
             'http://' + self.GNS3_IP + ':3080/v2/projects')
-        self.projectJson_list = sorted(GetProjectList.json(), key=lambda k: k['name'])
-        self.comboBox_projectSelection.addItems([i['name'] for i in self.projectJson_list])
+        self.comboBox_projectSelection.addItems(sorted([i['name'] for i in GetProjectList.json()]))
 
     def get_IP(self):
         if os.name == 'nt':
