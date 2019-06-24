@@ -104,6 +104,7 @@ class Ui_MainWindow(object):
         self.GNS3_IP = self.get_IP()
         GetProjectList = requests.get(
             'http://' + self.GNS3_IP + ':3080/v2/projects')
+        self.projectJson_list = GetProjectList.json()
         self.comboBox_projectSelection.addItems(sorted([i['name'] for i in GetProjectList.json()]))
 
     def get_IP(self):
@@ -152,11 +153,31 @@ class Ui_MainWindow(object):
                 check_bin = subprocess.check_output(bash + ' -c ' + '\"' + check_bin + '\"')
                 if check_bin != b"mkisofs:\n":
                     self.CSR1000v_loadLab()
+                else:
+                    self.error_dialog.showMessage('Error:\r\nmkisofs is most likely not installed.\r\nTry installing cdrtools or cdrkit.')
             else:
                 check_bin = subprocess.check_output(check_bin, shell=True)
                 if check_bin != b"mkisofs:\n":
                     self.CSR1000v_loadLab()
-            self.error_dialog.showMessage('Error:\r\nmkisofs is most likely not installed.\r\nTry installing cdrtools or cdrkit.')
+                else:
+                    self.error_dialog.showMessage('Error:\r\nmkisofs is most likely not installed.\r\nTry installing cdrtools or cdrkit.')
+        check_bin = 'whereis mcopy'
+        if os.name == 'nt':
+            is32bit = (platform.architecture()[0] == '32bit')
+            system32 = os.path.join(os.environ['SystemRoot'], 'SysNative' if is32bit else 'System32')
+            bash = os.path.join(system32, 'bash.exe')
+            check_bin = subprocess.check_output(bash + ' -c ' + '\"' + check_bin + '\"')
+            if check_bin != b"mcopy:\n":
+                self.IOSvL2_loadLab()
+            else:
+                self.error_dialog.showMessage('Error:\r\nmcopy is most likely not installed.\r\nTry installing mtools.')
+        else:
+            check_bin = subprocess.check_output(check_bin, shell=True)
+            if check_bin != b"mcopy:\n":
+                self.IOSvL2_loadLab()
+            else:
+                self.error_dialog.showMessage('Error:\r\nmcopy is most likely not installed.\r\nTry installing mtools.')
+        
 
 
     def IOSv_loadLab(self):
@@ -179,59 +200,53 @@ class Ui_MainWindow(object):
             system32 = os.path.join(os.environ['SystemRoot'], 'SysNative' if is32bit else 'System32')
             bash = os.path.join(system32, 'bash.exe')
         for filename in os.listdir(dirpath):
-            string1 = 'md5sum ' + str(PurePosixPath(Path(dirpath))) + '/' + filename + ' | cut -d \' \' -f 1 > files/ios_config_checksum'
-            string2 = 'cp ' + str(PurePosixPath(Path(dirpath))) + '/' + filename + ' files/ios_config.txt'
-            string3 = 'cp files/IOSv_startup_config_template.img files/IOSv_startup_config_' + filename[:-4] + '.img'
-            string4 = 'mcopy -i files/IOSv_startup_config_' + filename[:-4] + '.img@@63S files/ios_config.txt ::'
-            string5 = 'mcopy -i files/IOSv_startup_config_' + filename[:-4] + '.img@@63S files/ios_config_checksum ::'
-            string6 = 'md5sum files/IOSv_startup_config_' + filename[:-4] + '.img | cut -d \' \' -f 1 > files/IOSv_startup_config_' + filename[:-4] + '.img.md5sum'
-            string7 = 'md5sum files/IOSv_startup_config_' + filename[:-4] + '.img | cut -d \' \' -f 1'
-            if os.name == 'nt':
-                subprocess.call(bash + ' -c ' + '\"' + string1 + '\"')
-                subprocess.call(bash + ' -c ' + '\"' + string2 + '\"')
-                subprocess.call(bash + ' -c ' + '\"' + string3 + '\"')
-                subprocess.call(bash + ' -c ' + '\"' + string4 + '\"')
-                subprocess.call(bash + ' -c ' + '\"' + string5 + '\"')
-                subprocess.call(bash + ' -c ' + '\"' + string6 + '\"')
-                string7 = subprocess.check_output(bash + ' -c ' + '\"' + string7 + '\"')
-            else:
-                subprocess.call(string1, shell=True)
-                subprocess.call(string2, shell=True)
-                subprocess.call(string3, shell=True)
-                subprocess.call(string4, shell=True)
-                subprocess.call(string5, shell=True)
-                subprocess.call(string6, shell=True)
-                string7 = subprocess.check_output(string7, shell=True)
-            string7 = string7[:-1].decode("utf -8")
-            for p in projectJson["topology"]["nodes"]:
-                if p["name"] == "R" + filename[1:-4]:
-                    p["properties"]["hdc_disk_image_md5sum"] = string7
-                    node_id = p["node_id"]
-            with pysftp.Connection(self.GNS3_IP, username='gns3', password='gns3', cnopts=cnopts) as sftp:
-                with sftp.cd('/opt/gns3/images/QEMU/'):
-                    sftp.put('files/IOSv_startup_config_' + filename[:-4] + '.img.md5sum')
-                    sftp.put('files/IOSv_startup_config_' + filename[:-4] + '.img')
-                sftp.close()
-            with pysftp.Connection(self.GNS3_IP, username='gns3', password='gns3', cnopts=cnopts) as sftp:
-                for remotedir in sftp.listdir('/opt/gns3/projects/'+project_id+'/project-files/qemu/'):
-                    if remotedir == node_id:
-                        with sftp.cd('/opt/gns3/projects/'+project_id+'/project-files/qemu/'+node_id):
-                            for remotefile in sftp.listdir():
-                                sftp.remove(remotefile)
-                sftp.close()
-            os.remove("files/ios_config_checksum")
-            os.remove("files/ios_config.txt")
-            os.remove('files/IOSv_startup_config_' + filename[:-4] + '.img.md5sum')
-            os.remove('files/IOSv_startup_config_' + filename[:-4] + '.img')
-            progress = progress + 100/len(os.listdir(dirpath))
-            self.progressBar.setProperty("value", progress)
-        with open('files/'+projectSelection+'.gns3', 'w') as outfile:
-            json.dump(projectJson, outfile, sort_keys=True, indent=4)
-        with pysftp.Connection(self.GNS3_IP, username='gns3', password='gns3', cnopts=cnopts) as sftp:
-            with sftp.cd('/opt/gns3/projects/'+project_id):
-                sftp.put('files/'+projectSelection+'.gns3')
-            sftp.close()
-        os.remove('files/'+projectSelection+'.gns3')
+            if filename[:1] == 'r':
+                string1 = 'md5sum ' + str(PurePosixPath(Path(dirpath))) + '/' + filename + ' | cut -d \' \' -f 1 > files/ios_config_checksum'
+                string2 = 'cp ' + str(PurePosixPath(Path(dirpath))) + '/' + filename + ' files/ios_config.txt'
+                string3 = 'cp files/IOSv_startup_config_template.img files/IOSv_startup_config_' + filename[:-4] + '.img'
+                string4 = 'mcopy -i files/IOSv_startup_config_' + filename[:-4] + '.img@@63S files/ios_config.txt ::'
+                string5 = 'mcopy -i files/IOSv_startup_config_' + filename[:-4] + '.img@@63S files/ios_config_checksum ::'
+                string6 = 'md5sum files/IOSv_startup_config_' + filename[:-4] + '.img | cut -d \' \' -f 1 > files/IOSv_startup_config_' + filename[:-4] + '.img.md5sum'
+                string7 = 'md5sum files/IOSv_startup_config_' + filename[:-4] + '.img | cut -d \' \' -f 1'
+                if os.name == 'nt':
+                    subprocess.call(bash + ' -c ' + '\"' + string1 + '\"')
+                    subprocess.call(bash + ' -c ' + '\"' + string2 + '\"')
+                    subprocess.call(bash + ' -c ' + '\"' + string3 + '\"')
+                    subprocess.call(bash + ' -c ' + '\"' + string4 + '\"')
+                    subprocess.call(bash + ' -c ' + '\"' + string5 + '\"')
+                    subprocess.call(bash + ' -c ' + '\"' + string6 + '\"')
+                    string7 = subprocess.check_output(bash + ' -c ' + '\"' + string7 + '\"')
+                else:
+                    subprocess.call(string1, shell=True)
+                    subprocess.call(string2, shell=True)
+                    subprocess.call(string3, shell=True)
+                    subprocess.call(string4, shell=True)
+                    subprocess.call(string5, shell=True)
+                    subprocess.call(string6, shell=True)
+                    string7 = subprocess.check_output(string7, shell=True)
+                string7 = string7[:-1].decode("utf -8")
+                for p in projectJson["topology"]["nodes"]:
+                    if p["name"] == "R" + filename[1:-4]:
+                        p["properties"]["hdc_disk_image_md5sum"] = string7
+                        node_id = p["node_id"]
+                with pysftp.Connection(self.GNS3_IP, username='gns3', password='gns3', cnopts=cnopts) as sftp:
+                    with sftp.cd('/opt/gns3/images/QEMU/'):
+                        sftp.put('files/IOSv_startup_config_' + filename[:-4] + '.img.md5sum')
+                        sftp.put('files/IOSv_startup_config_' + filename[:-4] + '.img')
+                    sftp.close()
+                with pysftp.Connection(self.GNS3_IP, username='gns3', password='gns3', cnopts=cnopts) as sftp:
+                    for remotedir in sftp.listdir('/opt/gns3/projects/'+project_id+'/project-files/qemu/'):
+                        if remotedir == node_id:
+                            with sftp.cd('/opt/gns3/projects/'+project_id+'/project-files/qemu/'+node_id):
+                                for remotefile in sftp.listdir():
+                                    sftp.remove(remotefile)
+                    sftp.close()
+                os.remove("files/ios_config_checksum")
+                os.remove("files/ios_config.txt")
+                os.remove('files/IOSv_startup_config_' + filename[:-4] + '.img.md5sum')
+                os.remove('files/IOSv_startup_config_' + filename[:-4] + '.img')
+                progress = progress + 100/len(os.listdir(dirpath))
+                self.progressBar.setProperty("value", progress)
         self.progressBar.setProperty("value", 100)
 
 
@@ -255,45 +270,108 @@ class Ui_MainWindow(object):
             system32 = os.path.join(os.environ['SystemRoot'], 'SysNative' if is32bit else 'System32')
             bash = os.path.join(system32, 'bash.exe')
         for filename in os.listdir(dirpath):
-            string1 = 'cp ' + str(PurePosixPath(Path(dirpath))) + '/' + filename + ' files/iosxe_config.txt'
-            string2 = 'mkisofs -l -o files/csr_config_' + filename[:-4] + '.iso files/iosxe_config.txt'
-            string3 = 'md5sum files/csr_config_' + filename[:-4] + '.iso | cut -d \' \' -f 1'
-            if os.name == 'nt':
-                subprocess.call(bash + ' -c ' + '\"' + string1 + '\"')
-                subprocess.call(bash + ' -c ' + '\"' + string2 + '\"')
-                string3 = subprocess.check_output(bash + ' -c ' + '\"' + string3 + '\"')
-            else:
-                subprocess.call(string1, shell=True)
-                subprocess.call(string2, shell=True)
-                string3 = subprocess.check_output(string3, shell=True)
-            for p in projectJson["topology"]["nodes"]:
-                if p["name"] == "R" + filename[1:-4]:
-                    p["properties"]["cdrom_image_md5sum"] = string3
-                    node_id = p["node_id"]
-            with pysftp.Connection(self.GNS3_IP, username='gns3', password='gns3', cnopts=cnopts) as sftp:
-                with sftp.cd('/opt/gns3/images/QEMU/'):
-                    sftp.put('files/csr_config_' + filename[:-4] + '.iso')
-                sftp.close()
-            with pysftp.Connection(self.GNS3_IP, username='gns3', password='gns3', cnopts=cnopts) as sftp:
-                for remotedir in sftp.listdir('/opt/gns3/projects/'+project_id+'/project-files/qemu/'):
-                    if remotedir == node_id:
-                        with sftp.cd('/opt/gns3/projects/'+project_id+'/project-files/qemu/'+node_id):
-                            for remotefile in sftp.listdir():
-                                sftp.remove(remotefile)
-                sftp.close()
-            os.remove("files/iosxe_config.txt")
-            os.remove('files/csr_config_' + filename[:-4] + '.iso')
-            progress = progress + 100/len(os.listdir(dirpath))
-            self.progressBar.setProperty("value", progress)
-        with open('files/'+projectSelection+'.gns3', 'w') as outfile:
-            json.dump(projectJson, outfile, sort_keys=True, indent=4)
-        with pysftp.Connection(self.GNS3_IP, username='gns3', password='gns3', cnopts=cnopts) as sftp:
-            with sftp.cd('/opt/gns3/projects/'+project_id):
-                sftp.put('files/'+projectSelection+'.gns3')
-            sftp.close()
-        os.remove('files/'+projectSelection+'.gns3')
+            if filename[:1] == 'r':
+                string1 = 'cp ' + str(PurePosixPath(Path(dirpath))) + '/' + filename + ' files/iosxe_config.txt'
+                string2 = 'mkisofs -l -o files/csr_config_' + filename[:-4] + '.iso files/iosxe_config.txt'
+                string3 = 'md5sum files/csr_config_' + filename[:-4] + '.iso | cut -d \' \' -f 1'
+                if os.name == 'nt':
+                    subprocess.call(bash + ' -c ' + '\"' + string1 + '\"')
+                    subprocess.call(bash + ' -c ' + '\"' + string2 + '\"')
+                    string3 = subprocess.check_output(bash + ' -c ' + '\"' + string3 + '\"')
+                else:
+                    subprocess.call(string1, shell=True)
+                    subprocess.call(string2, shell=True)
+                    string3 = subprocess.check_output(string3, shell=True)
+                for p in projectJson["topology"]["nodes"]:
+                    if p["name"] == "R" + filename[1:-4]:
+                        p["properties"]["cdrom_image_md5sum"] = string3
+                        node_id = p["node_id"]
+                with pysftp.Connection(self.GNS3_IP, username='gns3', password='gns3', cnopts=cnopts) as sftp:
+                    with sftp.cd('/opt/gns3/images/QEMU/'):
+                        sftp.put('files/csr_config_' + filename[:-4] + '.iso')
+                    sftp.close()
+                with pysftp.Connection(self.GNS3_IP, username='gns3', password='gns3', cnopts=cnopts) as sftp:
+                    for remotedir in sftp.listdir('/opt/gns3/projects/'+project_id+'/project-files/qemu/'):
+                        if remotedir == node_id:
+                            with sftp.cd('/opt/gns3/projects/'+project_id+'/project-files/qemu/'+node_id):
+                                for remotefile in sftp.listdir():
+                                    sftp.remove(remotefile)
+                    sftp.close()
+                os.remove("files/iosxe_config.txt")
+                os.remove('files/csr_config_' + filename[:-4] + '.iso')
+                progress = progress + 100/len(os.listdir(dirpath))
+                self.progressBar.setProperty("value", progress)
         self.progressBar.setProperty("value", 100)
 
+
+    def IOSvL2_loadLab(self):
+        projectSelection = str(self.comboBox_projectSelection.currentText())
+        cnopts = pysftp.CnOpts()
+        cnopts.hostkeys = None
+        for i in self.projectJson_list:
+            if i['name'] == projectSelection:
+                project_id = i['project_id']
+                project_filename = i['filename']
+
+        GetProjectfile = requests.get(
+            'http://' + self.GNS3_IP + ':3080/v2/projects/' + project_id + '/files/' + project_filename)
+        projectJson = GetProjectfile.json()
+        dirpath = os.path.join('files', 'INE.VIRL.initial.configs', 'advanced.technology.labs', str(self.comboBox_LabSelection.currentText()))
+        progress = 0
+        self.progressBar.setProperty("value", progress)
+        if os.name == 'nt':
+            is32bit = (platform.architecture()[0] == '32bit')
+            system32 = os.path.join(os.environ['SystemRoot'], 'SysNative' if is32bit else 'System32')
+            bash = os.path.join(system32, 'bash.exe')
+        for filename in os.listdir(dirpath):
+            if filename[:2] == 'sw':
+                string1 = 'md5sum ' + str(PurePosixPath(Path(dirpath))) + '/' + filename + ' | cut -d \' \' -f 1 > files/ios_config_checksum'
+                string2 = 'cp ' + str(PurePosixPath(Path(dirpath))) + '/' + filename + ' files/ios_config.txt'
+                string3 = 'cp files/IOSv_startup_config_template.img files/IOSv_startup_config_' + filename[:-4] + '.img'
+                string4 = 'mcopy -i files/IOSv_startup_config_' + filename[:-4] + '.img@@63S files/ios_config.txt ::'
+                string5 = 'mcopy -i files/IOSv_startup_config_' + filename[:-4] + '.img@@63S files/ios_config_checksum ::'
+                string6 = 'md5sum files/IOSv_startup_config_' + filename[:-4] + '.img | cut -d \' \' -f 1 > files/IOSv_startup_config_' + filename[:-4] + '.img.md5sum'
+                string7 = 'md5sum files/IOSv_startup_config_' + filename[:-4] + '.img | cut -d \' \' -f 1'
+                if os.name == 'nt':
+                    subprocess.call(bash + ' -c ' + '\"' + string1 + '\"')
+                    subprocess.call(bash + ' -c ' + '\"' + string2 + '\"')
+                    subprocess.call(bash + ' -c ' + '\"' + string3 + '\"')
+                    subprocess.call(bash + ' -c ' + '\"' + string4 + '\"')
+                    subprocess.call(bash + ' -c ' + '\"' + string5 + '\"')
+                    subprocess.call(bash + ' -c ' + '\"' + string6 + '\"')
+                    string7 = subprocess.check_output(bash + ' -c ' + '\"' + string7 + '\"')
+                else:
+                    subprocess.call(string1, shell=True)
+                    subprocess.call(string2, shell=True)
+                    subprocess.call(string3, shell=True)
+                    subprocess.call(string4, shell=True)
+                    subprocess.call(string5, shell=True)
+                    subprocess.call(string6, shell=True)
+                    string7 = subprocess.check_output(string7, shell=True)
+                string7 = string7[:-1].decode("utf -8")
+                for p in projectJson["topology"]["nodes"]:
+                    if p["name"] == "SW" + filename[2:-4]:
+                        p["properties"]["hdc_disk_image_md5sum"] = string7
+                        node_id = p["node_id"]
+                with pysftp.Connection(self.GNS3_IP, username='gns3', password='gns3', cnopts=cnopts) as sftp:
+                    with sftp.cd('/opt/gns3/images/QEMU/'):
+                        sftp.put('files/IOSv_startup_config_' + filename[:-4] + '.img.md5sum')
+                        sftp.put('files/IOSv_startup_config_' + filename[:-4] + '.img')
+                    sftp.close()
+                with pysftp.Connection(self.GNS3_IP, username='gns3', password='gns3', cnopts=cnopts) as sftp:
+                    for remotedir in sftp.listdir('/opt/gns3/projects/'+project_id+'/project-files/qemu/'):
+                        if remotedir == node_id:
+                            with sftp.cd('/opt/gns3/projects/'+project_id+'/project-files/qemu/'+node_id):
+                                for remotefile in sftp.listdir():
+                                    sftp.remove(remotefile)
+                    sftp.close()
+                os.remove("files/ios_config_checksum")
+                os.remove("files/ios_config.txt")
+                os.remove('files/IOSv_startup_config_' + filename[:-4] + '.img.md5sum')
+                os.remove('files/IOSv_startup_config_' + filename[:-4] + '.img')
+                progress = progress + 100/len(os.listdir(dirpath))
+                self.progressBar.setProperty("value", progress)
+        self.progressBar.setProperty("value", 100)
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
@@ -301,4 +379,4 @@ if __name__ == "__main__":
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)
     MainWindow.show()
-    sys.exit(app.exec_())
+sys.exit(app.exec_())
