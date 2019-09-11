@@ -162,21 +162,6 @@ class Ui_MainWindow(object):
                 else:
                     self.error_dialog.showMessage('Error:\r\nmkisofs is most likely not installed.\r\nTry installing cdrtools or cdrkit.')
         check_bin = 'whereis mcopy'
-        if os.name == 'nt':
-            is32bit = (platform.architecture()[0] == '32bit')
-            system32 = os.path.join(os.environ['SystemRoot'], 'SysNative' if is32bit else 'System32')
-            bash = os.path.join(system32, 'bash.exe')
-            check_bin = subprocess.check_output(bash + ' -c ' + '\"' + check_bin + '\"')
-            if check_bin != b"mcopy:\n":
-                self.IOSvL2_loadLab()
-            else:
-                self.error_dialog.showMessage('Error:\r\nmcopy is most likely not installed.\r\nTry installing mtools.')
-        else:
-            check_bin = subprocess.check_output(check_bin, shell=True)
-            if check_bin != b"mcopy:\n":
-                self.IOSvL2_loadLab()
-            else:
-                self.error_dialog.showMessage('Error:\r\nmcopy is most likely not installed.\r\nTry installing mtools.')
         
 
 
